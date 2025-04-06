@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}阀门列表{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">数据上传</h5>
+    </div>
+    <div class="card-body">
+        <form method="post" enctype="multipart/form-data" action="/upload">
+            <div class="input-group">
+                <input type="file" class="form-control" name="file" required>
+                <button type="submit" class="btn btn-primary">上传数据</button>
+            </div>
+            <small class="form-text text-muted">支持格式: .txt, .csv</small>
+        </form>
+    </div>
+</div>
+
+<div class="card mt-4">
+    <div class="card-header">
+        <h5 class="mb-0">阀门列表</h5>
+    </div>
+    <div class="card-body">
+        <div class="list-group">
+            {% for valve in valves %}
+            <a href="{{ url_for('valve_detail', valve_id=valve) }}"
+               class="list-group-item list-group-item-action">
+                {{ valve }}
+            </a>
+            {% else %}
+            <div class="alert alert-info">暂无阀门数据</div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

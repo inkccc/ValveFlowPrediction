@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}阀门 {{ valve.Valve_Id }}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h4 class="mb-0">阀门 {{ valve.Valve_Id }} 实时数据</h4>
+        <div class="controls">
+            <button id="predictBtn" class="btn btn-primary">
+                <span class="spinner-border spinner-border-sm d-none" role="status"></span>
+                开始预测
+            </button>
+        </div>
+    </div>
+    <div class="card-header">
+        <h4 class="mb-0">阀门 {{ valve.Valve_Id }} 实时数据</h4>
+    </div>
+    <div class="card-body">
+        <div id="flowChart" class="chart-container"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.0/dist/echarts.min.js"></script>
+<script>
+    document.getElementById('predictBtn').addEventListener('click', function() {
+        const btn = this;
+        const spinner = btn.querySelector('.spinner-border');
+        const originalText = btn.innerHTML;
+
+        // 显示加载状态
+        btn.disabled = true;
+        spinner.classList.remove('d-none');
+        btn.innerHTML = '预测进行中...';
+
+        fetch(`/predict/{{ valve.Valve_Id }}`, {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if(data.success) {
+                alert('预测完成！新数据已生成');
+                updateChart(); // 立即刷新图表
+            } else {
+                alert('预测失败：' + data.message);
+            }
+        })
+        .catch(error => {
+            alert('请求失败：' + error.message);
+        })
+        .finally(() => {
+            // 恢复按钮状态
+            btn.disabled = false;
+            spinner.classList.add('d-none');
+            btn.innerHTML = originalText;
+        });
+    });
+    let chart = echarts.init(document.getElementById('flowChart'));
+    let option = {
+        title: { text: '流量趋势图' },
+        tooltip: { trigger: 'axis' },
+        legend: { data: ['实际流量', '预测流量'] },
+        xAxis: {
+            type: 'time',
+            name: '时间'
+        },
+        yAxis: {
+            type: 'value',
+            name: '流量值'
+        },
+        series: [
+            {
+                name: '实际流量',
+                type: 'line',
+                showSymbol: false,
+                data: []
+            },
+            {
+                name: '预测流量',
+                type: 'line',
+                showSymbol: false,
+                data: []
+            }
+        ],
+        dataZoom: [{
+            type: 'inside',
+            start: 0,
+            end: 100
+        }, {
+            start: 0,
+            end: 100
+        }]
+    };
+
+    // 初始渲染
+    chart.setOption(option);
+
+    // 更新图表数据
+    function updateChart() {
+        fetch(`/api/data/{{ valve.Valve_Id }}`)
+            .then(response => response.json())
+            .then(data => {
+                const actualData = data.actual.map(d => [d.timestamp * 1000, d.pv]);
+                const predictData = data.predicted.map(d => [d.timestamp * 1000, d.pv]);
+
+                chart.setOption({
+                    series: [
+                        { data: actualData },
+                        { data: predictData }
+                    ]
+                });
+            });
+    }
+
+    // 初始加载数据
+    updateChart();
+    // 每5秒更新一次
+    setInterval(updateChart, 5000);
+
+</script>
+{% endblock %}
