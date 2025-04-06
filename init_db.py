@@ -16,5 +16,4 @@ if __name__ == "__main__":
     # valve_data = GetData.FileType1(file_path)
     # t=Data_homogenization_SegmentedResampling(valve_data, 10, 1000)
     # t_equation=find_best_model(t.get_valveOpening(),t.get_valveFlowRate())
-
     mysql_init(config)
